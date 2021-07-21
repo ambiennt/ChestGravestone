@@ -72,15 +72,19 @@ THook(void, "?die@ServerPlayer@@UEAAXAEBVActorDamageSource@@@Z", Player *player,
         playerInventory->removeAllItems();
         CallServerClassMethod<void>("?sendInventory@ServerPlayer@@UEAAX_N@Z", player, false);
 
-        //update chest blocks to client
+        //update chest blocks to all clients
         auto pkt_1 = CallServerClassMethod<std::unique_ptr<BlockActorDataPacket>>(
             "?_getUpdatePacket@ChestBlockActor@@MEAA?AV?$unique_ptr@VBlockActorDataPacket@@U?$default_delete@VBlockActorDataPacket@@@std@@@std@@AEAVBlockSource@@@Z",
             chestBlock_1, normalizedChestPos_1);
         auto pkt_2 = CallServerClassMethod<std::unique_ptr<BlockActorDataPacket>>(
             "?_getUpdatePacket@ChestBlockActor@@MEAA?AV?$unique_ptr@VBlockActorDataPacket@@U?$default_delete@VBlockActorDataPacket@@@std@@@std@@AEAVBlockSource@@@Z",
             chestBlock_2, normalizedChestPos_2);
-        player->sendNetworkPacket(*pkt_1);
-        player->sendNetworkPacket(*pkt_2);
+
+        LocateService<Level>()->forEachPlayer([&](Player const &p) -> bool {
+            p.sendNetworkPacket(*pkt_1);
+            p.sendNetworkPacket(*pkt_2);
+            return true;
+        });
 
         //avoid unnecessary inventory call of ServerPlayer::clearVanishEnchantedItems and Player::dropEquipment
         CallServerClassMethod<void>("?die@Player@@UEAAXAEBVActorDamageSource@@@Z", player, source);
