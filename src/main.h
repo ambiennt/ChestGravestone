@@ -18,6 +18,6 @@
 #include <Block/VanillaBlockTypes.h>
 #include <Math/Vec2.h>
 #include <Math/Vec3.h>
-#include "Packet/BlockActorDataPacket.h"
+#include <Packet/BlockActorDataPacket.h>
 
 DEF_LOGGER("ChestGravestone");

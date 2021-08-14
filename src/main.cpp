@@ -21,74 +21,76 @@ THook(void, "?die@ServerPlayer@@UEAAXAEBVActorDamageSource@@@Z", Player *player,
     //test keepinventory
     auto gr = CallServerClassMethod<GameRules*>("?getGameRules@Level@@QEAAAEAVGameRules@@XZ", LocateService<Level>());
     const int keepInventoryId = 11;
-    bool isKeepInventory = CallServerClassMethod<bool>("?getBool@GameRules@@QEBA_NUGameRuleId@@@Z", gr, &keepInventoryId);
+    
+    if (!CallServerClassMethod<bool>("?getBool@GameRules@@QEBA_NUGameRuleId@@@Z", gr, &keepInventoryId)) {
 
-    if (!isKeepInventory) {
-
-        //set double chest
-        auto region = direct_access<BlockSource*>(player, 0x320);
         auto newPos(player->getPos());
         newPos.y -= 1.62;
-        auto normalizedChestPos_1 = getBlockPos(newPos);
-        region->setBlock(normalizedChestPos_1, *VanillaBlocks::mChest, 3, nullptr);
-        newPos.x += 1.0;
-        auto normalizedChestPos_2 = getBlockPos(newPos);
-        region->setBlock(normalizedChestPos_2, *VanillaBlocks::mChest, 3, nullptr);
+        if (newPos.y >= 0.0) {
 
-        //remove items with curse of vanishing
-        CallServerClassMethod<void>("?clearVanishEnchantedItems@ServerPlayer@@UEAAXXZ", player);
+            //set double chest
+            auto region = direct_access<BlockSource*>(player, 0x320);
+            auto normalizedChestPos_1 = getBlockPos(newPos);
+            region->setBlock(normalizedChestPos_1, *VanillaBlocks::mChest, 3, nullptr);
+            newPos.x += 1.0;
+            auto normalizedChestPos_2 = getBlockPos(newPos);
+            region->setBlock(normalizedChestPos_2, *VanillaBlocks::mChest, 3, nullptr);
 
-        //get entire player inventory contents
-        //fixed typo in PlayerInventory.h, "invectory" -> "inventory"
-        Inventory* playerInventory = CallServerClassMethod<PlayerInventory*>("?getSupplies@Player@@QEAAAEAVPlayerInventory@@XZ", player)->inventory.get();
+            //remove items with curse of vanishing
+            CallServerClassMethod<void>("?clearVanishEnchantedItems@ServerPlayer@@UEAAXXZ", player);
 
-        auto chestBlock_1 = region->getBlockEntity(normalizedChestPos_1);
-        auto chestBlock_2 = region->getBlockEntity(normalizedChestPos_2);
-        auto chestContainer = chestBlock_1->getContainer();
+            //get entire player inventory contents
+            //fixed typo in PlayerInventory.h, "invectory" -> "inventory"
+            Inventory* playerInventory = CallServerClassMethod<PlayerInventory*>("?getSupplies@Player@@QEAAAEAVPlayerInventory@@XZ", player)->inventory.get();
 
-        //copy player inventory to chest
-        const int playerArmorSlots = 4;
-        for (int i = 0; i < playerArmorSlots; i++) {
-            auto armorItem = CallServerClassMethod<ItemStack const &>("?getArmor@Actor@@UEBAAEBVItemStack@@W4ArmorSlot@@@Z", player, (ArmorSlot)i);
-            if (armorItem) {
-                chestContainer->addItemToFirstEmptySlot(armorItem);
-                player->setArmor((ArmorSlot)i, ItemStack());
+            auto chestBlock_1 = region->getBlockEntity(normalizedChestPos_1);
+            auto chestBlock_2 = region->getBlockEntity(normalizedChestPos_2);
+            auto chestContainer = chestBlock_1->getContainer();
+
+            //copy player inventory to chest
+            const int playerArmorSlots = 4;
+            for (int i = 0; i < playerArmorSlots; i++) {
+                auto armorItem = CallServerClassMethod<ItemStack const &>("?getArmor@Actor@@UEBAAEBVItemStack@@W4ArmorSlot@@@Z", player, (ArmorSlot)i);
+                if (armorItem) {
+                    chestContainer->addItemToFirstEmptySlot(armorItem);
+                    player->setArmor((ArmorSlot)i, ItemStack());
+                }
             }
-        }
 
-        auto offhandItem = CallServerClassMethod<ItemStack*>("?getOffhandSlot@Actor@@QEBAAEBVItemStack@@XZ", player);
-        if (offhandItem) {
-            chestContainer->addItemToFirstEmptySlot(*offhandItem);
-            player->setOffhandSlot(ItemStack());
-        }
-
-        int playerInventorySlots = CallServerClassMethod<int>("?getContainerSize@FillingContainer@@UEBAHXZ", playerInventory);
-        for (int i = 0; i < playerInventorySlots; i++) {
-            auto inventoryItem = CallServerClassMethod<ItemStack const &>("?getItem@FillingContainer@@UEBAAEBVItemStack@@H@Z", playerInventory, i);
-            if (inventoryItem) {
-                chestContainer->addItemToFirstEmptySlot(inventoryItem);
+            auto offhandItem = CallServerClassMethod<ItemStack*>("?getOffhandSlot@Actor@@QEBAAEBVItemStack@@XZ", player);
+            if (offhandItem) {
+                chestContainer->addItemToFirstEmptySlot(*offhandItem);
+                player->setOffhandSlot(ItemStack());
             }
+
+            int playerInventorySlots = CallServerClassMethod<int>("?getContainerSize@FillingContainer@@UEBAHXZ", playerInventory);
+            for (int i = 0; i < playerInventorySlots; i++) {
+                auto inventoryItem = CallServerClassMethod<ItemStack const &>("?getItem@FillingContainer@@UEBAAEBVItemStack@@H@Z", playerInventory, i);
+                if (inventoryItem) {
+                    chestContainer->addItemToFirstEmptySlot(inventoryItem);
+                }
+            }
+            playerInventory->removeAllItems();
+            CallServerClassMethod<void>("?sendInventory@ServerPlayer@@UEAAX_N@Z", player, false);
+
+            //update chest blocks to all clients
+            auto pkt_1 = CallServerClassMethod<std::unique_ptr<BlockActorDataPacket>>(
+                "?_getUpdatePacket@ChestBlockActor@@MEAA?AV?$unique_ptr@VBlockActorDataPacket@@U?$default_delete@VBlockActorDataPacket@@@std@@@std@@AEAVBlockSource@@@Z",
+                chestBlock_1, normalizedChestPos_1);
+            auto pkt_2 = CallServerClassMethod<std::unique_ptr<BlockActorDataPacket>>(
+                "?_getUpdatePacket@ChestBlockActor@@MEAA?AV?$unique_ptr@VBlockActorDataPacket@@U?$default_delete@VBlockActorDataPacket@@@std@@@std@@AEAVBlockSource@@@Z",
+                chestBlock_2, normalizedChestPos_2);
+
+            LocateService<Level>()->forEachPlayer([&](Player const &p) -> bool {
+                p.sendNetworkPacket(*pkt_1);
+                p.sendNetworkPacket(*pkt_2);
+                return true;
+            });
+
+            //avoid unnecessary inventory call of ServerPlayer::clearVanishEnchantedItems and Player::dropEquipment
+            CallServerClassMethod<void>("?die@Player@@UEAAXAEBVActorDamageSource@@@Z", player, source);
+            return;
         }
-        playerInventory->removeAllItems();
-        CallServerClassMethod<void>("?sendInventory@ServerPlayer@@UEAAX_N@Z", player, false);
-
-        //update chest blocks to all clients
-        auto pkt_1 = CallServerClassMethod<std::unique_ptr<BlockActorDataPacket>>(
-            "?_getUpdatePacket@ChestBlockActor@@MEAA?AV?$unique_ptr@VBlockActorDataPacket@@U?$default_delete@VBlockActorDataPacket@@@std@@@std@@AEAVBlockSource@@@Z",
-            chestBlock_1, normalizedChestPos_1);
-        auto pkt_2 = CallServerClassMethod<std::unique_ptr<BlockActorDataPacket>>(
-            "?_getUpdatePacket@ChestBlockActor@@MEAA?AV?$unique_ptr@VBlockActorDataPacket@@U?$default_delete@VBlockActorDataPacket@@@std@@@std@@AEAVBlockSource@@@Z",
-            chestBlock_2, normalizedChestPos_2);
-
-        LocateService<Level>()->forEachPlayer([&](Player const &p) -> bool {
-            p.sendNetworkPacket(*pkt_1);
-            p.sendNetworkPacket(*pkt_2);
-            return true;
-        });
-
-        //avoid unnecessary inventory call of ServerPlayer::clearVanishEnchantedItems and Player::dropEquipment
-        CallServerClassMethod<void>("?die@Player@@UEAAXAEBVActorDamageSource@@@Z", player, source);
-        return;
     }
     original(player, source);
 }
