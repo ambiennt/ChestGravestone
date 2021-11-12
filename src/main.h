@@ -8,6 +8,7 @@
 #include <Actor/Player.h>
 #include <Actor/ServerPlayer.h>
 #include <Level/Level.h>
+#include <Level/DimensionIds.h>
 #include <Level/GameRuleIds.h>
 #include <Container/Container.h>
 #include <Container/SimpleContainer.h>
