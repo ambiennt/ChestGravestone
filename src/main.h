@@ -18,5 +18,6 @@
 #include <Block/BlockSource.h>
 #include <Block/VanillaBlocks.h>
 #include <Math/Vec3.h>
+#include <Math/BlockPos.h>
 
 DEF_LOGGER("ChestGravestone");

@@ -4,12 +4,6 @@
 void dllenter() {}
 void dllexit() {}
 
-BlockPos getBlockPos(const Vec3& currPos) {
-    BlockPos pos;
-    CallServerClassMethod<void>("??0BlockPos@@QEAA@AEBVVec3@@@Z", &pos, currPos);
-    return pos;
-}
-
 THook(void, "?die@ServerPlayer@@UEAAXAEBVActorDamageSource@@@Z", ServerPlayer *player, ActorDamageSource *source) {
 
     auto gr = CallServerClassMethod<GameRules*>("?getGameRules@Level@@QEAAAEAVGameRules@@XZ", LocateService<Level>());
@@ -18,7 +12,7 @@ THook(void, "?die@ServerPlayer@@UEAAXAEBVActorDamageSource@@@Z", ServerPlayer *p
     if (player->isPlayerInitialized() && !CallServerClassMethod<bool>("?getBool@GameRules@@QEBA_NUGameRuleId@@@Z", gr, &keepInventoryId)) {
 
         auto newPos = player->getPos();
-        newPos.y -= 1.62;
+        newPos.y -= 1.62f;
 
         int dimId = player->mDimensionId;
         switch ((DimensionIds) dimId) {
@@ -50,11 +44,12 @@ THook(void, "?die@ServerPlayer@@UEAAXAEBVActorDamageSource@@@Z", ServerPlayer *p
         }
 
         //set double chest
+        BlockPos bp;
         const auto region = player->mRegion;
-        auto normalizedChestPos_1 = getBlockPos(newPos);
+        auto normalizedChestPos_1 = bp.getBlockPos(newPos);
         region->setBlock(normalizedChestPos_1, *VanillaBlocks::mChest, 3, nullptr);
-        newPos.x += 1.0;
-        auto normalizedChestPos_2 = getBlockPos(newPos);
+        newPos.x += 1.0f;
+        auto normalizedChestPos_2 = bp.getBlockPos(newPos);
         region->setBlock(normalizedChestPos_2, *VanillaBlocks::mChest, 3, nullptr);
 
         auto chestBlock_1 = region->getBlockEntity(normalizedChestPos_1);
@@ -63,8 +58,7 @@ THook(void, "?die@ServerPlayer@@UEAAXAEBVActorDamageSource@@@Z", ServerPlayer *p
 
         //clear curse of vanishing items and get inventory
         player->clearVanishEnchantedItems();
-        auto playerInventory = CallServerClassMethod<PlayerInventory*>(
-            "?getSupplies@Player@@QEAAAEAVPlayerInventory@@XZ", player)->inventory.get();
+        auto playerInventory = player->mInventory->inventory.get();
 
         //copy player inventory to chest
         const int playerArmorSlots = 4;
@@ -96,7 +90,7 @@ THook(void, "?die@ServerPlayer@@UEAAXAEBVActorDamageSource@@@Z", ServerPlayer *p
         CallServerClassMethod<void>("?onChanged@ChestBlockActor@@UEAAXAEAVBlockSource@@@Z", chestBlock_1, region);
 
         //avoid unnecessary call of ServerPlayer::clearVanishEnchantedItems and Player::dropEquipment
-        return CallServerClassMethod<void>("?die@Player@@UEAAXAEBVActorDamageSource@@@Z", player, source);   
+        return CallServerClassMethod<void>("?die@Player@@UEAAXAEBVActorDamageSource@@@Z", player, source);
     }
     original(player, source);
 }
