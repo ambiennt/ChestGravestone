@@ -6,39 +6,41 @@ void dllexit() {}
 
 THook(void, "?die@ServerPlayer@@UEAAXAEBVActorDamageSource@@@Z", ServerPlayer *player, ActorDamageSource *source) {
 
-    auto gr = CallServerClassMethod<GameRules*>("?getGameRules@Level@@QEAAAEAVGameRules@@XZ", LocateService<Level>());
-    GameRuleIds keepInventoryId = GameRuleIds::KeepInventory;
+    auto* gr = &LocateService<Level>()->getGameRules();
+    GameRulesIndex keepInventoryId = GameRulesIndex::KeepInventory;
+    bool isKeepInventory = CallServerClassMethod<bool>("?getBool@GameRules@@QEBA_NUGameRuleId@@@Z", gr, &keepInventoryId);
 
-    if (player->isPlayerInitialized() && !CallServerClassMethod<bool>("?getBool@GameRules@@QEBA_NUGameRuleId@@@Z", gr, &keepInventoryId)) {
+    if (player->isPlayerInitialized() && !isKeepInventory) {
 
         auto newPos = player->getPos();
         newPos.y -= 1.62f;
 
-        int dimId = player->mDimensionId;
-        switch ((DimensionIds) dimId) {
-            case DimensionIds::Overworld:
-                {   
-                    const auto& generator = LocateService<Level>()->GetLevelDataWrapper()->getWorldGenerator();
-                    float lowerBounds = (generator == GeneratorType::Flat ? 1.0f : 5.0f);
+        auto dimId = ((DimensionIds)player->mDimensionId);
+        switch (dimId) {
+            
+            case DimensionIds::Overworld: {   
+                const auto& generator = LocateService<Level>()->GetLevelDataWrapper()->getWorldGenerator();
+                float lowerBounds = (generator == GeneratorType::Flat ? 1.0f : 5.0f);
                     
-                    if (newPos.y > 255.0f) newPos.y = 255.0f;
-                    else if (newPos.y < lowerBounds) newPos.y = lowerBounds;
-                    break;
-                }
+                if (newPos.y > 255.0f) newPos.y = 255.0f;
+                else if (newPos.y < lowerBounds) newPos.y = lowerBounds;
 
-            case DimensionIds::Nether:
-                {   
-                    if (newPos.y > 122.0f) newPos.y = 122.0f;
-                    else if (newPos.y < 5.0f) newPos.y = 5.0f;
-                    break;
-                }
+                break;
+            }
 
-            case DimensionIds::TheEnd:
-                {   
-                    if (newPos.y > 255.0f) newPos.y = 255.0f;
-                    else if (newPos.y < 0.0f) newPos.y = 0.0f;
-                    break;
-                }
+            case DimensionIds::Nether: {   
+                if (newPos.y > 122.0f) newPos.y = 122.0f;
+                else if (newPos.y < 5.0f) newPos.y = 5.0f;
+
+                break;
+            }
+
+            case DimensionIds::TheEnd: {   
+                if (newPos.y > 255.0f) newPos.y = 255.0f;
+                else if (newPos.y < 0.0f) newPos.y = 0.0f;
+
+                break;
+            }
 
             default: break;
         }
@@ -86,8 +88,9 @@ THook(void, "?die@ServerPlayer@@UEAAXAEBVActorDamageSource@@@Z", ServerPlayer *p
         std::string chestName = player->mPlayerName + "'s Gravestone";
         chestBlock_1->setCustomName(chestName);
         chestBlock_2->setCustomName(chestName);
-        direct_access<bool>(chestBlock_1, 0x278) = true; // mNotifyPlayersOnChange - update chest blocks to all clients
-        CallServerClassMethod<void>("?onChanged@ChestBlockActor@@UEAAXAEAVBlockSource@@@Z", chestBlock_1, region);
+        
+        ((ChestBlockActor*)chestBlock_1)->mNotifyPlayersOnChange = true;
+        chestBlock_1->onChanged(*region);
 
         //avoid unnecessary call of ServerPlayer::clearVanishEnchantedItems and Player::dropEquipment
         return CallServerClassMethod<void>("?die@Player@@UEAAXAEBVActorDamageSource@@@Z", player, source);

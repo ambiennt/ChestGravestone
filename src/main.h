@@ -9,12 +9,13 @@
 #include <Actor/ServerPlayer.h>
 #include <Level/Level.h>
 #include <Level/DimensionIds.h>
-#include <Level/GameRuleIds.h>
+#include <Level/GameRules.h>
 #include <Container/Container.h>
 #include <Container/SimpleContainer.h>
 #include <Container/PlayerInventory.h>
 #include <Item/ItemStack.h>
 #include <BlockActor/BlockActor.h>
+#include <BlockActor/ChestBlockActor.h>
 #include <Block/BlockSource.h>
 #include <Block/VanillaBlocks.h>
 #include <Math/Vec3.h>
