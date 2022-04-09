@@ -9,7 +9,7 @@
 #include <Actor/Player.h>
 #include <Actor/ServerPlayer.h>
 #include <Level/Level.h>
-#include <Level/DimensionIds.h>
+#include <Level/DimensionID.h>
 #include <Level/GameRules.h>
 #include <Container/Container.h>
 #include <Container/SimpleContainer.h>
@@ -80,5 +80,14 @@ inline struct Settings {
 	  	return f(settings.enableExtraItems, node["enableExtraItems"]) && f(settings.extraItems, node["extraItems"]);
   	}
 } settings;
+
+
+namespace ChestGravestone {
+
+bool isSafeBlock(Block const &block, bool isAboveBlock);
+bool isSafeRegion(class BlockSource &region, int32_t leadX, int32_t leadY, int32_t leadZ);
+std::pair<class BlockPos, class BlockPos> tryGetSafeChestGravestonePos(class Player const &player);
+
+}
 
 DEF_LOGGER("ChestGravestone");
