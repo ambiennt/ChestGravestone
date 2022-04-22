@@ -9,15 +9,15 @@ DEFAULT_SETTINGS(settings);
 namespace ChestGravestone {
 
 bool isSafeBlock(Block const& block, bool isAboveBlock) {
-	auto legacy = block.mLegacyBlock.get();
-	if (!legacy) return false;
+	if (!block.mLegacyBlock) return false;
+	auto& legacy = *block.mLegacyBlock.get();
 	if (isAboveBlock) {
-		if (legacy->isUnbreakableBlock()) return false;
+		if (legacy.isUnbreakableBlock()) return false;
 	}
-	return (legacy->isAirBlock() ||
-			legacy->hasBlockProperty(BlockProperty::Liquid) ||
-			legacy->hasBlockProperty(BlockProperty::TopSnow) ||
-			(legacy->getMaterial() == MaterialType::ReplaceablePlant));
+	return (legacy.isAirBlock() ||
+			legacy.hasBlockProperty(BlockProperty::Liquid) ||
+			legacy.hasBlockProperty(BlockProperty::TopSnow) ||
+			(legacy.getMaterial() == MaterialType::ReplaceablePlant));
 }
 
 bool isSafeRegion(BlockSource &region, int32_t leadX, int32_t leadY, int32_t leadZ) {
