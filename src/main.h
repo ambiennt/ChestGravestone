@@ -21,48 +21,48 @@
 
 struct itemToAdd {
 
-  	int32_t id                                       = 0;
-  	int32_t aux                                      = 0;
-  	int32_t count                                    = 0;
-  	std::string customName                           = "";
-  	std::vector<std::string> lore                    = {};
-  	std::vector<std::map<int32_t, int32_t>> enchants = {};
+	int32_t id											= 0;
+	int32_t aux											= 0;
+	int32_t count										= 0;
+	std::string customName								= "";
+	std::vector<std::string> lore						= {};
+	std::vector<std::map<int32_t, int32_t>> enchants	= {};
 
-  	template <typename IO> static inline bool io(IO f, itemToAdd &settings, YAML::Node &node) {
+	template <typename IO> static inline bool io(IO f, itemToAdd &settings, YAML::Node &node) {
 		return f(settings.id, node["id"]) &&
-			   	f(settings.aux, node["aux"]) &&
-			   	f(settings.count, node["count"]) &&
-		   	   	f(settings.customName, node["customName"]) &&
-		   	   	f(settings.lore, node["lore"]) &&
-		   	   	f(settings.enchants, node["enchants"]);
-   }
+				f(settings.aux, node["aux"]) &&
+				f(settings.count, node["count"]) &&
+				f(settings.customName, node["customName"]) &&
+				f(settings.lore, node["lore"]) &&
+				f(settings.enchants, node["enchants"]);
+	}
 };
 
 namespace YAML {
 template <> struct convert<itemToAdd> {
-  	static Node encode(itemToAdd const& rhs) {
+	static Node encode(itemToAdd const& rhs) {
 		Node node;
-		node["id"]         = rhs.id;
-		node["aux"]        = rhs.aux;
-		node["count"]      = rhs.count;
-		node["customName"] = rhs.customName;
-		node["lore"]       = rhs.lore;
-		node["enchants"]   = rhs.enchants;
+		node["id"]			= rhs.id;
+		node["aux"]			= rhs.aux;
+		node["count"]		= rhs.count;
+		node["customName"]	= rhs.customName;
+		node["lore"]		= rhs.lore;
+		node["enchants"]	= rhs.enchants;
 		return node;
-  	}
+	}
 
-  	static bool decode(Node const& node, itemToAdd &rhs) {
+	static bool decode(Node const& node, itemToAdd &rhs) {
 
 		if (!node.IsMap()) { return false; }
 
-		rhs.id         = node["id"].as<int32_t>();
-		rhs.aux        = node["aux"].as<int32_t>();
-		rhs.count      = node["count"].as<int32_t>();
-		rhs.customName = node["customName"].as<std::string>();
-		rhs.lore 	   = node["lore"].as<std::vector<std::string>>();
-		rhs.enchants   = node["enchants"].as<std::vector<std::map<int32_t, int32_t>>>();
+		rhs.id			= node["id"].as<int32_t>();
+		rhs.aux			= node["aux"].as<int32_t>();
+		rhs.count		= node["count"].as<int32_t>();
+		rhs.customName	= node["customName"].as<std::string>();
+		rhs.lore		= node["lore"].as<std::vector<std::string>>();
+		rhs.enchants	= node["enchants"].as<std::vector<std::map<int32_t, int32_t>>>();
 		return true;
-  	}
+	}
 };
 } // namespace YAML
 
@@ -71,9 +71,9 @@ inline struct Settings {
 	bool enableExtraItems = false;
 	std::vector<itemToAdd> extraItems = {itemToAdd()};
 
-  	template <typename IO> static inline bool io(IO f, Settings &settings, YAML::Node &node) {
-	  	return f(settings.enableExtraItems, node["enableExtraItems"]) && f(settings.extraItems, node["extraItems"]);
-  	}
+	template <typename IO> static inline bool io(IO f, Settings &settings, YAML::Node &node) {
+		return f(settings.enableExtraItems, node["enableExtraItems"]) && f(settings.extraItems, node["extraItems"]);
+	}
 } settings;
 
 
