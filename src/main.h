@@ -4,18 +4,13 @@
 #include <hook.h>
 #include <yaml.h>
 #include <base/base.h>
-#include <Actor/Actor.h>
-#include <Actor/Mob.h>
-#include <Actor/Player.h>
 #include <Actor/ServerPlayer.h>
 #include <Level/Level.h>
 #include <Level/DimensionID.h>
 #include <Level/GameRules.h>
-#include <Container/Container.h>
-#include <Container/SimpleContainer.h>
 #include <Container/PlayerInventory.h>
 #include <Item/ItemStack.h>
-#include <Item/CommandItem.h>
+#include <Item/ItemRegistry.h>
 #include <Item/Enchant.h>
 #include <BlockActor/BlockActor.h>
 #include <BlockActor/ChestBlockActor.h>
@@ -35,11 +30,11 @@ struct itemToAdd {
 
   	template <typename IO> static inline bool io(IO f, itemToAdd &settings, YAML::Node &node) {
 		return f(settings.id, node["id"]) &&
-			   f(settings.aux, node["aux"]) &&
-			   f(settings.count, node["count"]) &&
-		   	   f(settings.customName, node["customName"]) &&
-		   	   f(settings.lore, node["lore"]) &&
-		   	   f(settings.enchants, node["enchants"]);
+			   	f(settings.aux, node["aux"]) &&
+			   	f(settings.count, node["count"]) &&
+		   	   	f(settings.customName, node["customName"]) &&
+		   	   	f(settings.lore, node["lore"]) &&
+		   	   	f(settings.enchants, node["enchants"]);
    }
 };
 
@@ -84,10 +79,12 @@ inline struct Settings {
 
 namespace ChestGravestone {
 
-bool isSafeBlock(Block const &block, bool isAboveBlock);
-bool isSafeRegion(class BlockSource &region, int32_t leadX, int32_t leadY, int32_t leadZ);
-std::pair<class BlockPos, class BlockPos> tryGetSafeChestGravestonePos(class Player const &player);
+bool isSafeBlock(const Block &block, bool isAboveBlock);
+bool isSafeRegion(const BlockSource &region, int32_t leadX, int32_t leadY, int32_t leadZ);
+std::pair<BlockPos, BlockPos> tryGetSafeChestGravestonePos(const Player &player);
+void transferPlayerInventoryToChest(Player &player, Container& chestContainer);
+void tryAddYAMLItemStacksToChest(Container& chestContainer);
 
-}
+} // namespace ChestGravestone
 
 DEF_LOGGER("ChestGravestone");
